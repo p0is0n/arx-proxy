@@ -1,0 +1,85 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          arx-shorts
+# Required-Start:    $all
+# Required-Stop:     $all
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+### END INIT INFO
+# Author: p0is0n
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/usr/local/bin/twistd
+SERVICE_NAME=proxy
+SERVICE_DIR=$(cd $(dirname $0); pwd -P)
+PIDFILE=$SERVICE_DIR/$SERVICE_NAME.pid
+LOGFILE=$SERVICE_DIR/$SERVICE_NAME.log
+DAEMON_OPTS="-r select --pidfile=$PIDFILE --logfile=$LOGFILE -y $SERVICE_DIR/$SERVICE_NAME.py"
+
+# Set python path so twistd can find the plugin
+# See: http://twistedmatrix.com/projects/core/documentation/howto/plugin.html
+export PYTHONPATH=$SERVICE_DIR
+
+if [ ! -x $DAEMON ]; then
+  echo "ERROR: Can't execute $DAEMON."
+  exit 1
+fi
+
+if [ ! -d $SERVICE_DIR ]; then
+  echo "ERROR: Directory doesn't exist: $SERVICE_DIR"
+  exit 1
+fi
+
+start_service() {
+  echo -n " * Starting $SERVICE_NAME... "
+  $DAEMON $DAEMON_OPTS
+  e=$?
+  if [ $e -eq 1 ]; then
+    echo "already running"
+    return
+  fi
+
+  if [ $e -eq 255 ]; then
+    echo "couldn't start :("
+    return
+  fi
+
+  echo "done"
+}
+
+stop_service() {
+  echo -n " * Stopping $SERVICE_NAME... "
+  if [ -f "$PIDFILE" ]; then
+    PID=`cat $PIDFILE`
+    kill $PID 2>/dev/null
+    e=$?
+    if [ $e -eq 1 ]; then
+      echo "not running"
+      return
+    fi
+  else
+    echo "not running"
+    return
+  fi
+  echo "done"
+}
+
+case "$1" in
+  start)
+    start_service
+    ;;
+  stop)
+    stop_service
+    ;;
+  restart)
+    stop_service
+    start_service
+    ;;
+  *)
+    echo "Usage: $SERVICE_NAME {start|stop|restart}" >&2
+    exit 1
+    ;;
+esac
+
+exit 0
