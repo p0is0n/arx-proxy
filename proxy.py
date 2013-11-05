@@ -25,8 +25,10 @@ from twisted.internet import protocol
 from twisted.internet import threads
 from twisted.web.http import RESPONSES, OK, SERVICE_UNAVAILABLE, BAD_REQUEST
 
+
 def rel(*x):
 	return os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
+
 
 class FilePassword:
 	"""A file-based, text-based username/password database.
@@ -77,6 +79,7 @@ class FilePassword:
 
 	def __str__(self):
 		return '<FilePassword [%s] 0x%02X>' % (self.files, id(self))
+
 
 class ConfigFactory(object):
 
@@ -156,6 +159,7 @@ class ConfigFactory(object):
 		except:
 			return 1
 
+
 class ProxyFactory(protocol.Factory):#policies.LimitTotalConnectionsFactory):
 
 	protocol = None
@@ -166,6 +170,7 @@ class ProxyFactory(protocol.Factory):#policies.LimitTotalConnectionsFactory):
 
 	def registerProtocol(self, p):
 		p.timeOut = config.getTimeOut()
+
 
 class HttpProxyProtocol(basic.LineReceiver, policies.TimeoutMixin):
 
@@ -534,9 +539,11 @@ class HttpProxyProtocol(basic.LineReceiver, policies.TimeoutMixin):
 	def setOutgoing(self, outgoing):
 		self._outgoing = outgoing
 
+
 class HttpProxyFactory(ProxyFactory):
 
 	protocol = HttpProxyProtocol
+
 
 class SocksProxyProtocol(policies.TimeoutMixin, protocol.Protocol):
 
@@ -562,6 +569,7 @@ class SocksProxyProtocol(policies.TimeoutMixin, protocol.Protocol):
 	TYPE_IPv4 = 0x01
 	TYPE_IPv6 = 0x04
 	TYPE_DOMN = 0x03
+
 
 	class OProxyProtocol(protocol.Protocol):
 
@@ -621,6 +629,7 @@ class SocksProxyProtocol(policies.TimeoutMixin, protocol.Protocol):
 				))
 			'''
 			self.transport.write(data)
+
 
 	def __init__(self):
 
@@ -811,27 +820,24 @@ class SocksProxyProtocol(policies.TimeoutMixin, protocol.Protocol):
 	def setOutgoing(self, outgoing):
 		self._outgoing = outgoing
 
+
 class SocksProxyFactory(ProxyFactory):
 
 	protocol = SocksProxyProtocol
 
+
 config = ConfigFactory()
 
 if config.getUsersFile():
-	authChecker = FilePassword(
-		files=config.getUsersFile())
-	# Notice for usage file
-	reactor.callWhenRunning(
-		log.msg, 'Use auth checker', authChecker
-	)
+	authChecker = FilePassword(files=config.getUsersFile())
 else:
 	authChecker = None
 
-application = service.Application('arx-proxy') # create the Application
+application = service.Application('ARX-Proxy') # create the Application
 
 for protocols, port in config.getProtocols():
 	factory = locals().get(protocols.capitalize() + 'ProxyFactory')
+
 	# Start listen
 	if factory is not None:
-		internet.TCPServer(port, factory(
-		)).setServiceParent(application)
+		internet.TCPServer(port, factory()).setServiceParent(application)
